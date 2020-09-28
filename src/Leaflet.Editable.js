@@ -469,6 +469,7 @@
         initialize: function (latlng, latlngs, editor, options) {
             // We don't use this._latlng, because on drag Leaflet replace it while
             // we want to keep reference.
+            this.options.draggable = !!latlng["draggable"];
             this.latlng = latlng;
             this.latlngs = latlngs;
             this.editor = editor;
@@ -481,30 +482,34 @@
 
         onAdd: function (map) {
             L.Marker.prototype.onAdd.call(this, map);
-            this.on('drag', this.onDrag);
-            this.on('dragstart', this.onDragStart);
-            this.on('dragend', this.onDragEnd);
-            this.on('mouseup', this.onMouseup);
-            this.on('click', this.onClick);
-            this.on('contextmenu', this.onContextMenu);
-            this.on('mousedown touchstart', this.onMouseDown);
-            this.on('mouseover', this.onMouseOver);
-            this.on('mouseout', this.onMouseOut);
+            if (this.options.draggable) {
+                this.on('drag', this.onDrag);
+                this.on('dragstart', this.onDragStart);
+                this.on('dragend', this.onDragEnd);
+                this.on('mouseup', this.onMouseup);
+                this.on('click', this.onClick);
+                this.on('contextmenu', this.onContextMenu);
+                this.on('mousedown touchstart', this.onMouseDown);
+                this.on('mouseover', this.onMouseOver);
+                this.on('mouseout', this.onMouseOut);
+            }
             this.addMiddleMarkers();
         },
 
         onRemove: function (map) {
             if (this.middleMarker) this.middleMarker.delete();
             delete this.latlng.__vertex;
-            this.off('drag', this.onDrag);
-            this.off('dragstart', this.onDragStart);
-            this.off('dragend', this.onDragEnd);
-            this.off('mouseup', this.onMouseup);
-            this.off('click', this.onClick);
-            this.off('contextmenu', this.onContextMenu);
-            this.off('mousedown touchstart', this.onMouseDown);
-            this.off('mouseover', this.onMouseOver);
-            this.off('mouseout', this.onMouseOut);
+            if (this.options.draggable) {
+                this.off('drag', this.onDrag);
+                this.off('dragstart', this.onDragStart);
+                this.off('dragend', this.onDragEnd);
+                this.off('mouseup', this.onMouseup);
+                this.off('click', this.onClick);
+                this.off('contextmenu', this.onContextMenu);
+                this.off('mousedown touchstart', this.onMouseDown);
+                this.off('mouseover', this.onMouseOver);
+                this.off('mouseout', this.onMouseOut);
+            }
             L.Marker.prototype.onRemove.call(this, map);
         },
 
@@ -719,6 +724,7 @@
         onMouseDown: function (e) {
             var iconPos = L.DomUtil.getPosition(this._icon),
                 latlng = this.editor.map.layerPointToLatLng(iconPos);
+            latlng.draggable = true;
             e = {
                 originalEvent: e,
                 latlng: latlng
@@ -1254,6 +1260,7 @@
         },
 
         addLatLng: function (latlng) {
+            latlng.draggable = true;
             if (this._drawing === L.Editable.FORWARD) this._drawnLatLngs.push(latlng);
             else this._drawnLatLngs.unshift(latlng);
             this.feature._bounds.extend(latlng);
@@ -1828,8 +1835,24 @@
                 }
             }
             return false;
-        }
+        },
 
+        _convertLatLngs: function (latlngs) {
+            var result = [],
+                flat = isFlat(latlngs);
+    
+            for (var i = 0, len = latlngs.length; i < len; i++) {
+                if (flat) {
+                    result[i] = L.latLng(latlngs[i]);
+                    result[i].draggable = !!latlngs[i]["draggable"]
+                    this._bounds.extend(result[i]);
+                } else {
+                    result[i] = this._convertLatLngs(latlngs[i]);
+                }
+            }
+    
+            return result;
+        }
     };
 
     var PolygonMixin = {

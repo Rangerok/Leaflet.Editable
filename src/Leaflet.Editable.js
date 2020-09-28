@@ -439,7 +439,7 @@
     L.Editable.VertexIcon = L.DivIcon.extend({
 
         options: {
-            iconSize: new L.Point(8, 8)
+            iconSize: new L.Point(12, 12)
         }
 
     });
@@ -470,6 +470,7 @@
             // We don't use this._latlng, because on drag Leaflet replace it while
             // we want to keep reference.
             this.options.draggable = !!latlng["draggable"];
+            this.options.className = !this.options.draggable ? '' : 'leaflet-div-icon leaflet-vertex-icon';
             this.latlng = latlng;
             this.latlngs = latlngs;
             this.editor = editor;
